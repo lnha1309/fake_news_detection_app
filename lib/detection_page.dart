@@ -64,7 +64,7 @@ class _DetectionPageState extends State<DetectionPage> with TickerProviderStateM
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,7 +184,7 @@ class _DetectionPageState extends State<DetectionPage> with TickerProviderStateM
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: mainColor.withOpacity(0.3)),
+            border: Border.all(color: mainColor.withValues(alpha: 0.3)),
           ),
           child: Column(
             children: [
@@ -202,7 +202,7 @@ class _DetectionPageState extends State<DetectionPage> with TickerProviderStateM
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: mainColor),
               ),
               const SizedBox(height: 8),
-              Text('Độ tin cậy: $pct%', style: TextStyle(fontSize: 16, color: mainColor.withOpacity(0.8), fontWeight: FontWeight.w600)),
+              Text('Độ tin cậy: $pct%', style: TextStyle(fontSize: 16, color: mainColor.withValues(alpha: 0.8), fontWeight: FontWeight.w600)),
               const SizedBox(height: 16),
               // Confidence bar
               ClipRRect(
@@ -210,7 +210,7 @@ class _DetectionPageState extends State<DetectionPage> with TickerProviderStateM
                 child: LinearProgressIndicator(
                   value: r.confidence,
                   minHeight: 10,
-                  backgroundColor: mainColor.withOpacity(0.15),
+                  backgroundColor: mainColor.withValues(alpha: 0.15),
                   valueColor: AlwaysStoppedAnimation(mainColor),
                 ),
               ),
@@ -218,8 +218,8 @@ class _DetectionPageState extends State<DetectionPage> with TickerProviderStateM
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('FAKE: ${(r.probFake * 100).toStringAsFixed(1)}%', style: TextStyle(fontSize: 12, color: const Color(0xFFDC2626).withOpacity(0.7), fontWeight: FontWeight.w600)),
-                  Text('REAL: ${(r.probReal * 100).toStringAsFixed(1)}%', style: TextStyle(fontSize: 12, color: const Color(0xFF16A34A).withOpacity(0.7), fontWeight: FontWeight.w600)),
+                  Text('FAKE: ${(r.probFake * 100).toStringAsFixed(1)}%', style: TextStyle(fontSize: 12, color: const Color(0xFFDC2626).withValues(alpha: 0.7), fontWeight: FontWeight.w600)),
+                  Text('REAL: ${(r.probReal * 100).toStringAsFixed(1)}%', style: TextStyle(fontSize: 12, color: const Color(0xFF16A34A).withValues(alpha: 0.7), fontWeight: FontWeight.w600)),
                 ],
               ),
             ],
@@ -321,7 +321,7 @@ class _DetectionPageState extends State<DetectionPage> with TickerProviderStateM
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

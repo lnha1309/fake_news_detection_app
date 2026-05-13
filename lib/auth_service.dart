@@ -1,87 +1,120 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'models/app_user.dart';
+import 'services/api_client.dart';
+import 'services/api_exception.dart';
+import 'services/auth_storage.dart';
 
 class AuthService {
-  // Đổi thành địa chỉ IP LAN của máy bạn nếu test trên điện thoại thật (VD: http://192.168.1.X:5000/api)
-  // 10.0.2.2 là localhost của máy tính khi dùng Android Emulator
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
-
-  static Future<bool> login(String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          await saveToken(data['token']);
-          if (data['user'] != null && data['user']['fullName'] != null) {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('user_name', data['user']['fullName']);
-          }
-          return true;
-        }
-      }
-      return false;
-    } catch (e) {
-      print('Login error: $e');
-      return false;
+  static Future<AppUser> login(String email, String password) async {
+    final trimmedEmail = email.trim();
+    final trimmedPassword = password.trim();
+    if (trimmedEmail.isEmpty || trimmedPassword.isEmpty) {
+      throw const ApiException('Vui lòng nhập đầy đủ email và mật khẩu.');
     }
+
+    final response = await ApiClient.post(
+      '/auth/login',
+      body: {
+        'email': trimmedEmail,
+        'password': trimmedPassword,
+      },
+    );
+
+    return _handleAuthResponse(
+      response,
+      fallbackMessage: 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.',
+    );
   }
 
-  static Future<bool> register(String fullName, String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'fullName': fullName, 'email': email, 'password': password}),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          await saveToken(data['token']);
-          if (data['user'] != null && data['user']['fullName'] != null) {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('user_name', data['user']['fullName']);
-          }
-          return true;
-        }
-      }
-      return false;
-    } catch (e) {
-      print('Register error: $e');
-      return false;
+  static Future<AppUser> register(
+    String fullName,
+    String email,
+    String password,
+  ) async {
+    final trimmedName = fullName.trim();
+    final trimmedEmail = email.trim();
+    final trimmedPassword = password.trim();
+    if (trimmedName.isEmpty ||
+        trimmedEmail.isEmpty ||
+        trimmedPassword.isEmpty) {
+      throw const ApiException('Vui lòng nhập đầy đủ họ tên, email và mật khẩu.');
     }
+
+    final response = await ApiClient.post(
+      '/auth/register',
+      body: {
+        'fullName': trimmedName,
+        'email': trimmedEmail,
+        'password': trimmedPassword,
+      },
+    );
+
+    return _handleAuthResponse(
+      response,
+      fallbackMessage: 'Đăng ký thất bại. Email có thể đã tồn tại.',
+    );
+  }
+
+  static Future<AppUser> getProfile() async {
+    final response = await ApiClient.get('/auth/me', requiresAuth: true);
+    if (response['success'] != true) {
+      throw ApiException(
+        (response['message'] ?? 'Không thể lấy thông tin tài khoản.').toString(),
+      );
+    }
+
+    final rawUser = response['user'];
+    if (rawUser is! Map) {
+      throw const ApiException(
+        'Server không trả về thông tin người dùng hợp lệ.',
+      );
+    }
+
+    final user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
+    await AuthStorage.saveUserName(user.fullName);
+    return user;
   }
 
   static Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('jwt_token', token);
+    await AuthStorage.saveToken(token);
   }
 
   static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('jwt_token');
+    return AuthStorage.getToken();
   }
-  
+
   static Future<String?> getUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_name');
+    return AuthStorage.getUserName();
   }
 
   static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('jwt_token');
-    await prefs.remove('user_name');
+    await AuthStorage.clearSession();
   }
 
   static Future<bool> isLoggedIn() async {
     final token = await getToken();
     return token != null && token.isNotEmpty;
+  }
+
+  static Future<AppUser> _handleAuthResponse(
+    Map<String, dynamic> response, {
+    required String fallbackMessage,
+  }) async {
+    if (response['success'] != true) {
+      throw ApiException((response['message'] ?? fallbackMessage).toString());
+    }
+
+    final token = response['token']?.toString();
+    if (token == null || token.isEmpty) {
+      throw const ApiException('Server không trả về token đăng nhập hợp lệ.');
+    }
+
+    final rawUser = response['user'];
+    if (rawUser is! Map) {
+      throw const ApiException('Server không trả về thông tin người dùng hợp lệ.');
+    }
+
+    final user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
+    await AuthStorage.saveSession(token: token, userName: user.fullName);
+    return user;
   }
 }

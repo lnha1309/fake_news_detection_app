@@ -62,7 +62,6 @@ class _Navbar extends StatefulWidget {
 
 class _NavbarState extends State<_Navbar> {
   bool _isLoggedIn = false;
-  String? _userName;
 
   @override
   void initState() {
@@ -73,7 +72,14 @@ class _NavbarState extends State<_Navbar> {
   Future<void> _checkAuth() async {
     // Thêm một chút delay để đảm bảo SharedPreferences đã được đồng bộ kịp
     await Future.delayed(const Duration(milliseconds: 200));
-    final loggedIn = await AuthService.isLoggedIn();
+    var loggedIn = await AuthService.isLoggedIn();
+    if (loggedIn) {
+      try {
+        await AuthService.getProfile();
+      } catch (_) {
+        loggedIn = false;
+      }
+    }
     if (mounted) {
       setState(() {
         _isLoggedIn = loggedIn;
@@ -219,7 +225,7 @@ class _HeroSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -265,6 +271,7 @@ class _HeroSection extends StatelessWidget {
             child: OutlinedButton(
               onPressed: () async {
                 final loggedIn = await AuthService.isLoggedIn();
+                if (!context.mounted) return;
                 if (loggedIn) {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const DetectionPage()));
                 } else {
@@ -415,7 +422,7 @@ class _FeatureCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 2),
           ),
@@ -493,6 +500,7 @@ class _CtaSection extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () async {
                 final loggedIn = await AuthService.isLoggedIn();
+                if (!context.mounted) return;
                 if (loggedIn) {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const DetectionPage()));
                 } else {
